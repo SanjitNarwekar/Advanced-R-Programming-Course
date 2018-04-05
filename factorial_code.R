@@ -1,57 +1,156 @@
-# Author: Alex Lemm
-# Repo: https://github.com/alex23lemm/Advanced-R-Programming-Course
+# Author: Sanjt N# Author: Sanjt Narwekar
+# Forked from Author: Alex Lemm
+# Forked from Repo: alex23lemm/Advanced-R-Programming-Course
+# Repo: https://github.com/SanjitNarwekar/Advanced-R-Programming-Course
 
 # Load libraries ---------------------------------------------------------------
 
 library(purrr)
 library(microbenchmark)
+library(installr)
 
-# Define functions -------------------------------------------------------------
+# Define functions ------------------------------------------------------------
+
+
+# function factorial_loop -----------------------------------------------------
+#
+# This function uses a for loop to calculate factorials. The function expects 
+# only a postive integer as an input.
+#
+#------------------------------------------------------------------------------
 
 factorial_loop <- function(x) {
-  if (x == 0 || x == 1)
+  
+  check.integer <- installr:::check.integer
+  
+  if (x == 0 ||  x == -0 || x == 1){
     return(1)
+  }
+  
+  if (!check.integer(x)){
+    message("Input ",x," is not an integer. abs(x) used. Results will not tally with internal R function")
+    
+  }
+  
+  if ( x < 0 ){
+    message("Input ",x," is not positive. abs(x) used. Results will not tally with internal R function")
+  }
+  
   for (i in (x - 1):1) {
+    x <- abs(x)
     x <- x * i
   }
   x
 }
 
+# function factorial_reduce -----------------------------------------------------
+#
+# This function uses the reduce function to calculate factorials. The function expects 
+# only a postive integer as an input.
+#
+#------------------------------------------------------------------------------
+
+
 factorial_reduce <- function(x) {
-  if (x == 0)
+  
+  check.integer <- installr:::check.integer
+  
+  if (x == 0 ||  x == -0 || x == 1){
     return(1)
+  }
+  
+  if (!check.integer(x)){
+    message("Input ",x," is not an integer. abs(x) used. Results will not tally with internal R function")
+    
+  }
+  
+  if ( x < 0 ){
+    message("Input ",x," is not positive. abs(x) used. Results will not tally with internal R function")
+  }
+  
   reduce(1:x, `*`)
+  
 }
+
+# function factorial_func -----------------------------------------------------
+#
+# This function uses recursion to calculate factorials. The function expects 
+# only a postive integer as an input.
+#
+#------------------------------------------------------------------------------
 
 factorial_func <- function(x) {
-  if (x == 0)
+  
+  check.integer <- installr:::check.integer
+  
+  if (x == 0 ||  x == -0 || x == 1){
     return(1)
+  }
+  
+  if (!check.integer(x)){
+    message("Input ",x," is not an integer. abs(x) used. Results will not tally with internal R function")
+    
+  }
+  
+  if ( x < 0 ){
+    message("Input ",x," is not positive. abs(x) used. Results will not tally with internal R function")
+  }
+  
   x * factorial_func(x - 1)
+  
 }
 
+# function factorial_mem -----------------------------------------------------
+#
+# This function uses memoisation to calculate factorials. The function expects 
+# only a postive integer as an input.
+#
+#------------------------------------------------------------------------------
 
-# Create lookup table for memoization. Unlike in the Fibonacci example,
-# memoization does not make sense for individual function calls here because
-# recursive factorial calls never occur more than once for a specific input
-# value.
-# Therefore, efficiency is only gained when calculating factorials for 
-# subsequent input values
+check.integer <- installr:::check.integer
+
+# Create lookup table for memoization with 0 and 1 as  the 1st 2 values and 65 NA's
+# This should give fast calculation of values of 0 and 1 and 65 other numbers sfter 
+# they have been calculated atleast once.
+
+
 fact_tbl <- c(rep(NA, 65))
 
 factorial_mem <- function(x) {
-  if (x == 0)
+  
+  if (x == 0 ||  x == -0 || x == 1){
     return(1)
+  }
+  
+  stopifnot(x>0)
+  stopifnot(check.integer(x))
+  
+  
   if (!is.na(fact_tbl)[x])
     return(fact_tbl[x])
   fact_tbl[x] <<- x * factorial_mem(x - 1)
   fact_tbl[x]
 }
-    
 
 
-# Test functions ---------------------------------------------------------------
 
-input <- c(0, 1, 6, 11, 13,  45, 63)
+# test and measure factorial functions ----------------------------------------
+#
+# This script calls 4 factorial functions written by me to compare with the 
+# built in factorial function in R.
+#
+#------------------------------------------------------------------------------
+
+# Create lookup table for memoization with 0 and 1 as  the 1st 2 values and 65 NA's
+# This should give fast calculation of values of 0 and 1 and 65 other numbers sfter 
+# they have been calculated atleast once.
+
+
+fact_tbl <- c(rep(NA, 65))
+
+# Test functions --------------------------------------------------------------
+
+input <- c(0, 1, 4, 5)
 
 # Check if all functions produce the same results. R's built-in function
 # factorial() is used to compare the results
@@ -61,24 +160,15 @@ map_dbl(input, factorial_reduce)
 map_dbl(input, factorial_func)
 map_dbl(input, factorial_mem)
 
-# Interestingly, the factorial_reduce() produces NAs fairly early because
-# reduce() runs into an integer overflow in the lower second digits (here 
-# starting at fact(12))
-
-
 # Measure performance and create output ----------------------------------------
 
 # Use microbenchmark and purrr package to calculate performance for different 
 # input values and for ranges of input values
 
-sink("factorial_output.txt")
+sink("factorial_output.txt") 
 
-cat("====== PART 1: Performance and comparison of indivudual input values ======\n")
+cat("====== PART 1: Performance and comparison of individual input values ======\n")
 cat("======================== across factorial functions ======================= \n\n")
-
-# Reset lookup table for comparing purposes
-fact_tbl <- c(rep(NA, 65))
-
 
 # Calculate and compare perforamnce of individual input values
 individual_results <- map(input, ~ microbenchmark(
@@ -97,7 +187,7 @@ cat("====== PART 2: Performance and comparison of ranges of input values =======
 cat("======================== across factorial functions ======================= \n\n")
 
 get_benchmark <- function(x) {
-  fact_tbl <<- c(rep(NA, 100))
+  #fact_tbl <<- c(rep(NA, 100))
   microbenchmark(map_dbl(x, factorial_loop),
                  map_dbl(x, factorial_reduce),
                  map_dbl(x, factorial_func),
@@ -105,19 +195,9 @@ get_benchmark <- function(x) {
 }
 
 ranges <- list(`range 1:10` = 1:10,
-               `range 1:50` = 1:50,
-               `range 1:100` = 1:100)
+               `range 1:25` = 1:25,
+               `range 1:65` = 1:65)
 
 range_results <- map(ranges, get_benchmark)
 range_results
-
 sink()
-
-
-
-
-
-
-
-
-
